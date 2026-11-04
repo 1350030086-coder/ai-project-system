@@ -1,0 +1,69 @@
+{
+  "name": "WF-001 — Task Intake (starter blueprint)",
+  "nodes": [
+    {
+      "id": "webhook",
+      "name": "Webhook — Intake",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wf-001-task-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "validate",
+      "name": "Validate & Normalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const body = $json.body ?? $json;\\nif (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('Payload must be a JSON object');\\nif (typeof body.request !== 'string' || !body.request.trim()) throw new Error('request is required');\\nif (typeof body.source !== 'string' || !body.source.trim()) throw new Error('source is required');\\nconst allowed = ['low','normal','high','urgent'];\\nconst priority = body.priority ?? 'normal';\\nif (!allowed.includes(priority)) throw new Error('priority is invalid');\\nconst deadline = body.deadline ?? null;\\nif (deadline && Number.isNaN(Date.parse(deadline))) throw new Error('deadline must be ISO-8601');\\nreturn [{json:{source:body.source.trim(),request:body.request.trim(),goal:body.goal ?? body.request.trim(),deadline,priority,request_id:body.request_id ?? null,metadata:body.metadata ?? {},schema_version:1}}];"
+      }
+    },
+    {
+      "id": "note",
+      "name": "Persistence required before activation",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        240,
+        220
+      ],
+      "parameters": {
+        "content": "Blueprint only: connect PostgreSQL idempotency lookup + INSERT/outbox, status logging, Respond to Webhook, and bounded retry/error workflow before activation. Planner handoff intentionally not connected."
+      }
+    }
+  ],
+  "connections": {
+    "Webhook — Intake": {
+      "main": [
+        [
+          {
+            "node": "Validate & Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "pinData": {},
+  "versionId": "wf001-blueprint-v1"
+}
