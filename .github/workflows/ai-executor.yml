@@ -1,0 +1,41 @@
+name: AI Actions Executor
+
+on:
+  workflow_dispatch:
+    inputs:
+      action_type:
+        description: 'Loại tác vụ (ví dụ: create_file, update_readme)'
+        required: true
+        default: 'create_file'
+      payload:
+        description: 'Dữ liệu JSON chứa thông tin tác vụ từ AI'
+        required: false
+        default: '{}'
+
+jobs:
+  execute-ai-task:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Xử lý và thực thi tác vụ từ AI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTION_TYPE: ${{ github.event.inputs.action_type }}
+          PAYLOAD: ${{ github.event.inputs.payload }}
+        run: |
+          echo "Nhận lệnh từ AI với tác vụ: $ACTION_TYPE"
+          echo "Dữ liệu payload: $PAYLOAD"
+          
+          # Ví dụ: Tự động ghi nhận log hoặc khởi tạo cấu trúc file
+          mkdir -p ai_logs
+          echo "Task executed at $(date)" > ai_logs/latest_execution.log
+
+      - name: Commit và Push thay đổi lên Repository
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "auto: AI Agent executed task [skip ci]" || echo "No changes to commit"
+          git push
